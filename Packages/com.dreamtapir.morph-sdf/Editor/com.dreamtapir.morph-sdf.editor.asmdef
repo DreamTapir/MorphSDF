@@ -1,0 +1,16 @@
+{
+    "name": "com.dreamtapirr.morph-sdf.editor",
+    "rootNamespace": "MorphSDF.Editor",
+    "references": [
+        "GUID:a3a8a6fea93d97b46bf911eedf8c2376"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

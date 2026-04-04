@@ -1,0 +1,19 @@
+{
+  "name": "com.dreamtapir.morph-sdf",
+  "displayName": "Morph SDF",
+  "version": "1.0.0",
+  "unity": "6000.0",
+  "unityRelease": "33f1",
+  "description": "SkinnedMesh as input to real time generate a 3D SDF texture.",
+  "author": {
+    "name": "DreamTapir",
+    "url": "https://github.com/DreamTapir"
+  },
+  "keywords": [
+    "SDF",
+    "Signed Distance Field",
+    "SkinnedMesh",
+    "Mesh To SDF"
+  ],
+  "samples": []
+}

@@ -1,0 +1,14 @@
+{
+    "name": "com.dreamtapirr.morph-sdf.runtime",
+    "rootNamespace": "MorphSDF",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
