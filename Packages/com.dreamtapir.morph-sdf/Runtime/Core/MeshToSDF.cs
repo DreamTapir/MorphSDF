@@ -178,9 +178,9 @@ namespace MorphSDF
         #endregion
 
         #region Public
-        public T GetHandler<T>() where T : class, IMesh
+        public ISkinnedMeshHandler GetSkinnedMeshHandler()
         {
-            var handler = _mesh as T;
+            var handler = _mesh as ISkinnedMeshHandler;
             return handler;
         }
         

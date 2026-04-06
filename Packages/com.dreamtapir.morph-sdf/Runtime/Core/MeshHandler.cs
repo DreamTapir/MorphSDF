@@ -53,7 +53,6 @@ namespace MorphSDF
             Mesh = mesh;
             Mesh.vertexBufferTarget |= GraphicsBuffer.Target.Raw;
             Mesh.indexBufferTarget |= GraphicsBuffer.Target.Raw;
-            
             VertexBuffer = Mesh.GetVertexBuffer(Stream);
             IndexBuffer = Mesh.GetIndexBuffer();
             

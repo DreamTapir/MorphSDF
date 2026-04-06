@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace MorphSDF
 {
-    public class SkinnedMeshHandler : MeshHandler
+    public class SkinnedMeshHandler : MeshHandler, ISkinnedMeshHandler
     {
         #region Properties
         public override Matrix4x4 ObjectToSdfLocalMatrix
@@ -49,9 +49,9 @@ namespace MorphSDF
             UpdateBufferHandles();
         }
 
-        public void SetActive(bool active)
+        public void SetRender(bool enable)
         {
-            _skinnedMeshRenderer.enabled = active;
+            _skinnedMeshRenderer.enabled = enable;
         }
         
         #region IDisposable
