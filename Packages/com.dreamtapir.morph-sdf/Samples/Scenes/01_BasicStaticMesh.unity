@@ -383,6 +383,43 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!84 &955567490
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: MeshToSDF_SDF
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 45
+  m_MipMap: 0
+  m_GenerateMips: 1
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 2
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 3
+  m_VolumeDepth: 512
+  m_ShadowSamplingMode: 2
 --- !u!1 &1267059026 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 17558e6cc1c93234484dae11c37b00bb, type: 3}
@@ -400,16 +437,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a2a232e5cfc62a4c8a62789a6d32de9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: com.dreamtapirr.morph-sdf.editor::MorphSDF.Editor.StaticSdfGenerator
-  _voxelPerMeter: 128
-  _center: {x: 0, y: 0, z: -0}
-  _size: {x: 2, y: 2, z: 2}
-  _format: 0
+  _format: 1
+  _voxelPerMeter: 512
+  _center: {x: 0.1, y: 0.1, z: -0}
+  _size: {x: 1, y: 1, z: 1}
   _previewMode: 0
   _sliceAxis: 1
-  _sliceDepth: 0.006
+  _sliceDepth: 0.5
   _volumeSteps: 100
-  _alphaStrength: 0.04
-  _sdf: {fileID: 2121023465}
+  _alphaStrength: 0.22
+  _sdf: {fileID: 955567490}
 --- !u!1001 &1728209754
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -420,15 +457,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 17558e6cc1c93234484dae11c37b00bb, type: 3}
       propertyPath: m_LocalScale.x
-      value: 4.97
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 17558e6cc1c93234484dae11c37b00bb, type: 3}
       propertyPath: m_LocalScale.y
-      value: 4.97
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 17558e6cc1c93234484dae11c37b00bb, type: 3}
       propertyPath: m_LocalScale.z
-      value: 4.97
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 17558e6cc1c93234484dae11c37b00bb, type: 3}
       propertyPath: m_LocalPosition.x
@@ -502,43 +539,6 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1267059029}
   m_SourcePrefab: {fileID: 100100000, guid: 17558e6cc1c93234484dae11c37b00bb, type: 3}
---- !u!84 &2121023465
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: MeshToSDF_SDF
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 256
-  m_Height: 256
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 49
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 2
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 3
-  m_VolumeDepth: 256
-  m_ShadowSamplingMode: 2
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
