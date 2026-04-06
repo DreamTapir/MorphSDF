@@ -27,7 +27,7 @@ namespace MorphSDF
         public VolumeRender(Matrix4x4 matrix)
         {
             LocalToWorld = matrix;
-            Init();
+            Initialize();
         }
         
         public VolumeRender(Vector3 position, Vector3 scale) : this(position, scale, Quaternion.identity) {}
@@ -35,7 +35,7 @@ namespace MorphSDF
         public VolumeRender(Vector3 position, Vector3 scale, Quaternion rotation)
         {
             LocalToWorld = Matrix4x4.TRS(position, rotation, scale);
-            Init();
+            Initialize();
         }
         
         private void OnEndContextRendering(ScriptableRenderContext context, List<Camera> cameras)
@@ -49,7 +49,7 @@ namespace MorphSDF
             context.Submit();
         }
 
-        private void Init()
+        private void Initialize()
         {
             if (_mat != null) Object.DestroyImmediate(_mat);
             _mat = new Material(Shader.Find("MorphSDF/VolumeRender"));
