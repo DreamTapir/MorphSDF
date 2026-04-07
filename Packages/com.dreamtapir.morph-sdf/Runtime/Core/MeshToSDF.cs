@@ -135,18 +135,18 @@ namespace MorphSDF
             return Mathf.Max(1, (desired + threadNum - 1) / threadNum);
         }
         
-        private void Dispatch(CommandBuffer cb, string kernelName, int x, int y = 1, int z = 1)
+        private void Dispatch(CommandBuffer cmb, string kernelName, int x, int y = 1, int z = 1)
         {
             int kernelId = _kernels[kernelName];
             var ts = GetThreadSize(kernelId);
-            cb.BeginSample(kernelName);
-            cb.DispatchCompute(_cs, kernelId, GetGroupSize(x, ts.x), GetGroupSize(y, ts.y), GetGroupSize(z, ts.z));
-            cb.EndSample(kernelName);
+            cmb.BeginSample(kernelName);
+            cmb.DispatchCompute(_cs, kernelId, GetGroupSize(x, ts.x), GetGroupSize(y, ts.y), GetGroupSize(z, ts.z));
+            cmb.EndSample(kernelName);
         }
 
-        private void Dispatch(CommandBuffer cb, string kernelName, int[] size)
+        private void Dispatch(CommandBuffer cmb, string kernelName, int[] size)
         {
-            Dispatch(cb, kernelName, size[0], size[1], size[2]);
+            Dispatch(cmb, kernelName, size[0], size[1], size[2]);
         }
         
         private void SwapResolutionXY(CommandBuffer cb)
@@ -155,24 +155,24 @@ namespace MorphSDF
             cb.SetComputeIntParams(_cs, PropertyID.Resolution, _resolution);
         }
 
-        private void ComputeMaurerAxis(CommandBuffer cb)
+        private void ComputeMaurerAxis(CommandBuffer cmb)
         {
             int kernel = _kernels[Label.MaurerAxis];
-            cb.SetComputeBufferParam(_cs, kernel, PropertyID.Input, _input);
-            cb.SetComputeBufferParam(_cs, kernel, PropertyID.Output, _output);
-            Dispatch(cb, Label.MaurerAxis, _resolution[0], _resolution[2]);
+            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Input, _input);
+            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Output, _output);
+            Dispatch(cmb, Label.MaurerAxis, _resolution[0], _resolution[2]);
             (_input, _output) = (_output, _input);
         }
 
-        private void ComputeColorAxis(CommandBuffer cb)
+        private void ComputeColorAxis(CommandBuffer cmb)
         {
             int kernel = _kernels[Label.ColorAxis];
-            cb.SetComputeBufferParam(_cs, kernel, PropertyID.Input, _input);
-            cb.SetComputeBufferParam(_cs, kernel, PropertyID.Output, _output);
+            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Input, _input);
+            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Output, _output);
             _cs.GetKernelThreadGroupSizes(kernel, out uint x, out _, out _);
-            cb.BeginSample(Label.ColorAxis);
-            cb.DispatchCompute(_cs, kernel, GetGroupSize(_resolution[0], (int)x), _resolution[2], 1);
-            cb.EndSample(Label.ColorAxis);
+            cmb.BeginSample(Label.ColorAxis);
+            cmb.DispatchCompute(_cs, kernel, GetGroupSize(_resolution[0], (int)x), _resolution[2], 1);
+            cmb.EndSample(Label.ColorAxis);
             (_input, _output) = (_output, _input);
         }
         #endregion
