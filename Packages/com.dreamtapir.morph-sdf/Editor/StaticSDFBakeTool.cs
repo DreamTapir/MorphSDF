@@ -50,6 +50,7 @@ namespace MorphSDF.Editor
             {
                 _render.LocalToWorld = SdfLocalToWorldMatrix;
                 _render.SetParams(_sdf, _volumeSteps, _alphaStrength, _previewMode, _sliceAxis, _sliceDepth);
+                _render.SetActive(true);
             }
         }
 

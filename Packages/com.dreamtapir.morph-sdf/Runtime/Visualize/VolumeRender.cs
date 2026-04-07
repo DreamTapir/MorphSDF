@@ -16,6 +16,7 @@ namespace MorphSDF
         private Material _mat;
         private MaterialPropertyBlock _mpb;
         private Mesh _mesh;
+        private bool _active = false;
 
         private static readonly int _sdfId = Shader.PropertyToID("_Sdf");
         private static readonly int _volumeStepsId = Shader.PropertyToID("_VolumeSteps");
@@ -40,7 +41,7 @@ namespace MorphSDF
         
         private void OnEndContextRendering(ScriptableRenderContext context, List<Camera> cameras)
         {
-            if (_mat == null || _mesh == null) return;
+            if (!_active || _mat == null || _mesh == null) return;
             
             _cmb.Clear();
             _cmb.SetExecutionFlags(CommandBufferExecutionFlags.None);
@@ -70,6 +71,11 @@ namespace MorphSDF
             _mpb.SetInt(_renderModeId, (int)mode);
             _mpb.SetInt(_sliceAxisId, sliceAxis);
             _mpb.SetFloat(_sliceDepthId, sliceDepth);
+        }
+
+        public void SetActive(bool active)
+        {
+            _active = active;
         }
         
         #region IDisposable
