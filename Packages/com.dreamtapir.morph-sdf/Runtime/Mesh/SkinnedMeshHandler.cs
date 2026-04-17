@@ -9,7 +9,7 @@ namespace MorphSDF
         {
             get
             {
-                var unscaledWorldToSdfLocal = Matrix4x4.TRS(_skinnedMeshRenderer.rootBone.position, _skinnedMeshRenderer.rootBone.rotation, Vector3.one).inverse;
+                var unscaledWorldToSdfLocal = Matrix4x4.TRS(_center.position, _center.rotation, Vector3.one).inverse;
                 return unscaledWorldToSdfLocal * _skinnedMeshRenderer.transform.localToWorldMatrix;
             }
         }
@@ -17,20 +17,25 @@ namespace MorphSDF
 
         #region Fields
         private readonly SkinnedMeshRenderer _skinnedMeshRenderer;
+        private readonly Transform _center;
         #endregion
 
-        public SkinnedMeshHandler(SkinnedMeshRenderer skinnedMeshRenderer, int stream = 0) : base(new Mesh(), stream)
+        public SkinnedMeshHandler(SkinnedMeshRenderer skinnedMeshRenderer, Transform center = null, int stream = 0) :  base(() =>
         {
-            if (skinnedMeshRenderer == null || skinnedMeshRenderer.sharedMesh == null)
+            if (skinnedMeshRenderer.sharedMesh == null)
             {
-                Debug.LogError("Renderer or SharedMesh is null.");
-                return;
+                Debug.LogError("SharedMesh is null.");
+                return null;
             }
-            
+
+            var mesh = new Mesh();
+            mesh.MarkDynamic();
+            skinnedMeshRenderer.BakeMesh(mesh);
+            return mesh;
+        }, stream)
+        {
             _skinnedMeshRenderer = skinnedMeshRenderer;
-            Mesh.MarkDynamic();
-            _skinnedMeshRenderer.BakeMesh(Mesh);
-            UpdateBufferHandles();
+            _center = center ?? _skinnedMeshRenderer.rootBone;
         }
         
         private void UpdateBufferHandles()
@@ -49,7 +54,7 @@ namespace MorphSDF
             UpdateBufferHandles();
         }
 
-        public void SetRender(bool enable)
+        public void SetActive(bool enable)
         {
             _skinnedMeshRenderer.enabled = enable;
         }
@@ -59,7 +64,7 @@ namespace MorphSDF
         {
             if (Mesh != null)
             {
-                UnityEngine.Object.Destroy(Mesh);
+                Object.Destroy(Mesh);
             }
 
             base.Dispose();

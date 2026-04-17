@@ -11,6 +11,6 @@ namespace MorphSDF
         int TriangleCount { get; }
         Matrix4x4 ObjectToSdfLocalMatrix { get; }
 
-        void SetParams(CommandBuffer commandBuffer);
+        void SetParams(CommandBuffer cmb);
     }
 }

@@ -54,22 +54,16 @@ namespace MorphSDF
         
         private CommandBuffer _cmb;
         private GraphicsBuffer _voxel;
-        private GraphicsBuffer _input;
-        private GraphicsBuffer _output;
+        private SwapBuffer<GraphicsBuffer> _pba;
         
         private readonly int[] _resolution;
         private readonly float _cellSize;
         private readonly Vector3 _origin;
 
-        private bool _autoBakeMesh = false;
         private bool _initialized = false;
         private bool _disposed = false;
         #endregion
 
-        public MeshToSDF(SkinnedMeshRenderer skinnedMeshRenderer, int voxelPerMeter, Bounds bounds, TextureFormat format = TextureFormat.RFloat, bool autoBakeMesh = true) : this(new SkinnedMeshHandler(skinnedMeshRenderer), voxelPerMeter, bounds, format)
-        {
-            _autoBakeMesh = autoBakeMesh;
-        }
         public MeshToSDF(MeshFilter meshFilter, int voxelPerMeter, Bounds bounds, TextureFormat format = TextureFormat.RFloat) : this(new MeshFilterHandler(meshFilter), voxelPerMeter, bounds, format) {}
         public MeshToSDF(Mesh mesh, int voxelPerMeter, Bounds bounds, TextureFormat format = TextureFormat.RFloat) : this(new MeshHandler(mesh), voxelPerMeter, bounds, format) {}
         
@@ -100,8 +94,10 @@ namespace MorphSDF
             RegisterKernel(Label.SignedDistance);
             
             _voxel = new GraphicsBuffer(GraphicsBuffer.Target.Structured, length, sizeof(uint)){ name = $"{nameof(MeshToSDF)}_Voxel"};
-            _input = new GraphicsBuffer(GraphicsBuffer.Target.Structured, length, sizeof(int)){ name = $"{nameof(MeshToSDF)}_Input" };
-            _output = new GraphicsBuffer(GraphicsBuffer.Target.Structured, length, sizeof(int)) { name = $"{nameof(MeshToSDF)}_Output"};
+            _pba = new SwapBuffer<GraphicsBuffer>(
+                () => new GraphicsBuffer(GraphicsBuffer.Target.Structured, length, sizeof(int)),
+                buffer => buffer?.Release()
+            );
             var textureFormat = format == TextureFormat.RFloat ? RenderTextureFormat.RFloat : RenderTextureFormat.RHalf;
             SDF = new RenderTexture(_resolution[0], _resolution[1], 0, textureFormat)
             {
@@ -110,11 +106,10 @@ namespace MorphSDF
                 dimension = TextureDimension.Tex3D,
                 volumeDepth = _resolution[2],
                 wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Trilinear,
-                name = $"{nameof(MeshToSDF)}_SDF"
+                filterMode = FilterMode.Trilinear
             };
             SDF.Create();
-            
+
             _initialized = true;
         }
 
@@ -158,41 +153,30 @@ namespace MorphSDF
         private void ComputeMaurerAxis(CommandBuffer cmb)
         {
             int kernel = _kernels[Label.MaurerAxis];
-            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Input, _input);
-            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Output, _output);
+            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Input, _pba.Read);
+            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Output, _pba.Write);
             Dispatch(cmb, Label.MaurerAxis, _resolution[0], _resolution[2]);
-            (_input, _output) = (_output, _input);
+            _pba.Swap();
         }
 
         private void ComputeColorAxis(CommandBuffer cmb)
         {
             int kernel = _kernels[Label.ColorAxis];
-            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Input, _input);
-            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Output, _output);
+            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Input, _pba.Read);
+            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Output, _pba.Write);
             _cs.GetKernelThreadGroupSizes(kernel, out uint x, out _, out _);
             cmb.BeginSample(Label.ColorAxis);
             cmb.DispatchCompute(_cs, kernel, GetGroupSize(_resolution[0], (int)x), _resolution[2], 1);
             cmb.EndSample(Label.ColorAxis);
-            (_input, _output) = (_output, _input);
+            _pba.Swap();
         }
         #endregion
 
         #region Public
-        public ISkinnedMeshHandler GetSkinnedMeshHandler()
-        {
-            var handler = _mesh as ISkinnedMeshHandler;
-            return handler;
-        }
-        
         public void SetCommand(CommandBuffer cmb)
         {
             if (!_initialized || _disposed) return;
 
-            if (_autoBakeMesh && _mesh is SkinnedMeshHandler handler)
-            {
-                handler.BakeMesh();
-            }
-            
             cmb.BeginSample(Label.MeshToSDF);
             
             cmb.SetComputeVectorParam(_cs, PropertyID.Origin, _origin);
@@ -215,14 +199,14 @@ namespace MorphSDF
             
             kernel = _kernels[Label.Volume];
             cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Voxel, _voxel);
-            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Output, _input);
+            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Output, _pba.Read);
             Dispatch(cmb, Label.Volume, _resolution);
             
             kernel = _kernels[Label.FloodZ];
-            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Input, _input);
-            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Output, _output);
+            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Input, _pba.Read);
+            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Output, _pba.Write);
             Dispatch(cmb, Label.FloodZ, _resolution[0], _resolution[1]);
-            (_input, _output) = (_output, _input);
+            _pba.Swap();
             
             ComputeMaurerAxis(cmb);
             ComputeColorAxis(cmb);
@@ -233,7 +217,7 @@ namespace MorphSDF
             
             kernel = _kernels[Label.SignedDistance];
             cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Voxel, _voxel);
-            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Input, _input);
+            cmb.SetComputeBufferParam(_cs, kernel, PropertyID.Input, _pba.Read);
             cmb.SetComputeTextureParam(_cs, kernel, PropertyID.Sdf, SDF);
             Dispatch(cmb, Label.SignedDistance, _resolution);
             
@@ -251,38 +235,53 @@ namespace MorphSDF
             Graphics.ExecuteCommandBuffer(_cmb);
         }
 
+#if UNITY_6000_0_OR_NEWER
         public void BakeSDFAsync(ComputeQueueType queueType)
         {
             if (!_initialized || _disposed) return;
-            
-            _cmb.Clear();
-            _cmb.SetExecutionFlags(CommandBufferExecutionFlags.AsyncCompute);
-            
-            SetCommand(_cmb);
-            Graphics.ExecuteCommandBufferAsync(_cmb, queueType);
+
+            if (SystemInfo.supportsAsyncCompute)
+            {
+                _cmb.Clear();
+                _cmb.SetExecutionFlags(CommandBufferExecutionFlags.AsyncCompute);
+                
+                SetCommand(_cmb);
+                Graphics.ExecuteCommandBufferAsync(_cmb, queueType);
+            }
+            else
+            {
+                BakeSDF();
+            }
         }
         
         public async Awaitable<bool> BakeSDFAsync(ComputeQueueType queueType, CancellationToken token)
         {
             if (!_initialized || _disposed) return false;
 
-            BakeSDFAsync(queueType);
-            
-            GraphicsFence fence = Graphics.CreateGraphicsFence
-            (
-                GraphicsFenceType.AsyncQueueSynchronisation, 
-                SynchronisationStageFlags.ComputeProcessing
-            );
-
-            while (!fence.passed)
+            if (SystemInfo.supportsAsyncCompute && SystemInfo.supportsGraphicsFence)
             {
-                await Awaitable.NextFrameAsync(); 
-        
-                if (_disposed || token.IsCancellationRequested) return false;
-            }
+                BakeSDFAsync(queueType);
+            
+                GraphicsFence fence = _cmb.CreateGraphicsFence
+                (
+                    GraphicsFenceType.AsyncQueueSynchronisation, 
+                    SynchronisationStageFlags.ComputeProcessing
+                );
 
+                while (!fence.passed)
+                {
+                    await Awaitable.NextFrameAsync(); 
+        
+                    if (_disposed || token.IsCancellationRequested) return false;
+                }
+                
+                return true;
+            }
+            
+            BakeSDF();
             return true;
         }
+#endif
         #endregion
 
         #region IDisposable
@@ -296,8 +295,7 @@ namespace MorphSDF
             _cmb = null;
                 
             _voxel?.Release();
-            _input?.Release();
-            _output?.Release();
+            _pba?.Dispose();
                 
             if (SDF != null)
             {
@@ -305,7 +303,7 @@ namespace MorphSDF
                 if (Application.isPlaying) UnityEngine.Object.Destroy(SDF);
                 else UnityEngine.Object.DestroyImmediate(SDF);
             }
-
+            
             _initialized = false;
             _disposed = true;
             GC.SuppressFinalize(this);

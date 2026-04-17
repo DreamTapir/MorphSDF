@@ -9,15 +9,15 @@ namespace MorphSDF
         #region Static
         protected static class PropertyID
         {
-            public static readonly int VertexBuffer = Shader.PropertyToID("_VertexBuffer");
-            public static readonly int IndexBuffer = Shader.PropertyToID("_IndexBuffer");
-            public static readonly int IndexFormat16Bit = Shader.PropertyToID("_IndexFormat16Bit");
-            public static readonly int Stride = Shader.PropertyToID("_Stride");
-            public static readonly int ColorByteOffset = Shader.PropertyToID("_ColorByteOffset");
-            public static readonly int UvByteOffset = Shader.PropertyToID("_UvByteOffset");
-            public static readonly int PositionByteOffset = Shader.PropertyToID("_PositionByteOffset");
-            public static readonly int NormalByteOffset = Shader.PropertyToID("_NormalByteOffset");
-            public static readonly int TangentByteOffset = Shader.PropertyToID("_TangentByteOffset");
+            public static  int VertexBuffer = Shader.PropertyToID("_VertexBuffer");
+            public static  int IndexBuffer = Shader.PropertyToID("_IndexBuffer");
+            public static  int IndexFormat16Bit = Shader.PropertyToID("_IndexFormat16Bit");
+            public static  int Stride = Shader.PropertyToID("_Stride");
+            public static  int ColorByteOffset = Shader.PropertyToID("_ColorByteOffset");
+            public static  int UvByteOffset = Shader.PropertyToID("_UvByteOffset");
+            public static  int PositionByteOffset = Shader.PropertyToID("_PositionByteOffset");
+            public static  int NormalByteOffset = Shader.PropertyToID("_NormalByteOffset");
+            public static  int TangentByteOffset = Shader.PropertyToID("_TangentByteOffset");
         }
         #endregion
         
@@ -46,10 +46,11 @@ namespace MorphSDF
         protected bool Disposed = false;
         #endregion
 
+        public MeshHandler(Func<Mesh> func, int stream = 0) : this(func(), stream) {}
+
         public MeshHandler(Mesh mesh, int stream = 0)
         {
             Stream = stream;
-
             Mesh = mesh;
             Mesh.vertexBufferTarget |= GraphicsBuffer.Target.Raw;
             Mesh.indexBufferTarget |= GraphicsBuffer.Target.Raw;
@@ -64,23 +65,22 @@ namespace MorphSDF
             PositionByteOffset = Mesh.GetAttributeOffset(VertexAttribute.Position);
             NormalByteOffset = Mesh.GetAttributeOffset(VertexAttribute.Normal);
             TangentByteOffset = Mesh.GetAttributeOffset(VertexAttribute.Tangent);
-            
             Initialized = true;
         }
         
-        public virtual void SetParams(CommandBuffer commandBuffer)
+        public virtual void SetParams(CommandBuffer cmb)
         {
             if (!Initialized || Disposed) return;
             
-            commandBuffer.SetGlobalBuffer(PropertyID.VertexBuffer, VertexBuffer);
-            commandBuffer.SetGlobalBuffer(PropertyID.IndexBuffer, IndexBuffer);
-            commandBuffer.SetGlobalInt(PropertyID.IndexFormat16Bit, IndexFormat16Bit ? 1 : 0);
-            commandBuffer.SetGlobalInt(PropertyID.Stride, Stride);
-            commandBuffer.SetGlobalInt(PropertyID.ColorByteOffset, ColorByteOffset);
-            commandBuffer.SetGlobalInt(PropertyID.UvByteOffset, UVByteOffset);
-            commandBuffer.SetGlobalInt(PropertyID.PositionByteOffset, PositionByteOffset);
-            commandBuffer.SetGlobalInt(PropertyID.NormalByteOffset, NormalByteOffset);
-            commandBuffer.SetGlobalInt(PropertyID.TangentByteOffset, TangentByteOffset);
+            cmb.SetGlobalBuffer(PropertyID.VertexBuffer, VertexBuffer);
+            cmb.SetGlobalBuffer(PropertyID.IndexBuffer, IndexBuffer);
+            cmb.SetGlobalInt(PropertyID.IndexFormat16Bit, IndexFormat16Bit ? 1 : 0);
+            cmb.SetGlobalInt(PropertyID.Stride, Stride);
+            cmb.SetGlobalInt(PropertyID.ColorByteOffset, ColorByteOffset);
+            cmb.SetGlobalInt(PropertyID.UvByteOffset, UVByteOffset);
+            cmb.SetGlobalInt(PropertyID.PositionByteOffset, PositionByteOffset);
+            cmb.SetGlobalInt(PropertyID.NormalByteOffset, NormalByteOffset);
+            cmb.SetGlobalInt(PropertyID.TangentByteOffset, TangentByteOffset);
         }
         
         protected virtual void ReleaseBuffer()

@@ -3,6 +3,6 @@ namespace MorphSDF
     public interface ISkinnedMeshHandler
     {
         void BakeMesh();
-        void SetRender(bool enable);
+        void SetActive(bool enable);
     }
 }

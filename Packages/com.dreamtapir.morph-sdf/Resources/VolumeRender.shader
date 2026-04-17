@@ -140,7 +140,7 @@ Shader "MorphSDF/VolumeRender"
                     if (t >= 0.0 && t <= max_t)
                     {
                         float3 hit_uvw = ray_start_uvw + ray_dir_uvw * t;
-                        float sdf_val = tex3D(_Sdf, hit_uvw).r;
+                        float sdf_val = saturate(tex3D(_Sdf, hit_uvw).r);
                         return float4(CalcStrengthColor(sdf_val), 1.0);
                     }
                     discard;
@@ -156,16 +156,16 @@ Shader "MorphSDF/VolumeRender"
                 {
                     if (_RenderMode == 2)
                     {
-                        float current_sdf = tex3D(_Sdf, ray_uvw).r;
+                        float current_sdf = tex3Dlod(_Sdf, float4(ray_uvw, 0)).r;
                         if (current_sdf <= 0.0)
                         {
                             float t_refine = (prev_sdf > 0.0) ? prev_sdf / (prev_sdf - current_sdf + 0.0001) : 0.0;
                             float3 hit_uvw = ray_uvw - ray_dir_uvw * step_size * (1.0 - t_refine);
                             float3 e = float3(0.01, 0, 0); 
                             float3 n = normalize(float3(
-                                tex3D(_Sdf, hit_uvw + e.xyy).r - tex3D(_Sdf, hit_uvw - e.xyy).r,
-                                tex3D(_Sdf, hit_uvw + e.yxy).r - tex3D(_Sdf, hit_uvw - e.yxy).r,
-                                tex3D(_Sdf, hit_uvw + e.yyx).r - tex3D(_Sdf, hit_uvw - e.yyx).r
+                                tex3Dlod(_Sdf, float4(hit_uvw + e.xyy, 0)).r - tex3Dlod(_Sdf, float4(hit_uvw - e.xyy, 0)).r,
+                                tex3Dlod(_Sdf, float4(hit_uvw + e.yxy, 0)).r - tex3Dlod(_Sdf, float4(hit_uvw - e.yxy, 0)).r,
+                                tex3Dlod(_Sdf, float4(hit_uvw + e.yyx, 0)).r - tex3Dlod(_Sdf, float4(hit_uvw - e.yyx, 0)).r
                             ));
                             float3 light_dir = normalize(float3(1, 1.5, -1));
                             float diff = max(0.0, dot(n, light_dir)) * 0.7 + 0.3;
@@ -176,7 +176,7 @@ Shader "MorphSDF/VolumeRender"
                     }
                     else 
                     {
-                        const float sdf_val = tex3D(_Sdf, ray_uvw).r;
+                        const float sdf_val = saturate(tex3Dlod(_Sdf, float4(ray_uvw, 0)).r);
                         const float3 sample_rgb = CalcStrengthColor(sdf_val);
                         const float sample_alpha = abs(sdf_val) * _AlphaStrength; 
                         float4 sample_color = float4(sample_rgb, sample_alpha);
