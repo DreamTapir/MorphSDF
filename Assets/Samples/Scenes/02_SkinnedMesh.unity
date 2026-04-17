@@ -137,7 +137,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MorphSDF.Sample.SkinnedMeshBakerSample
   _format: 1
-  _voxelPerMeter: 128
+  _voxelPerMeter: 64
   _size: {x: 2.5, y: 2.5, z: 2.5}
   _centerTransform: {fileID: 1838296932}
   _computeAsync: 0
