@@ -3,7 +3,7 @@ using UnityEngine.Rendering;
 
 namespace MorphSDF.Sample
 {
-    public class SkinnedMeshBakerSample : MonoBehaviour
+    public class SkinnedMeshToSDFSample : MonoBehaviour
     {
         [Header("SDF Settings")]
         [SerializeField] private TextureFormat _format = TextureFormat.RFloat;
