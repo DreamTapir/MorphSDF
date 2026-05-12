@@ -1,3 +1,5 @@
+using System;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -10,7 +12,7 @@ namespace MorphSDF.Sample
         [SerializeField] private int _voxelPerMeter = 64;
         [SerializeField] private Vector3 _size = Vector3.one;
         [SerializeField] private Transform _centerTransform;
-        [SerializeField] private bool _computeAsync = false;
+        [SerializeField] private int _bakeType = 0;
         [SerializeField] private ComputeQueueType _queueType = ComputeQueueType.Background;
 
         [Header("Debug")]
@@ -24,6 +26,8 @@ namespace MorphSDF.Sample
         private MeshToSDF _sdfBaker;
         private SkinnedMeshHandler _skinnedMeshHandler;
         private VolumeRender _volumeRender;
+        private volatile bool _processing = false;
+        private readonly CancellationTokenSource _cts = new();
         
         private Matrix4x4 SdfLocalToWorldMatrix => Matrix4x4.TRS(_centerTransform.position, _centerTransform.rotation, _size);
         
@@ -37,23 +41,44 @@ namespace MorphSDF.Sample
 
         }
 
-        private void Update()
+        private async void Update()
         {
-            Bake();
-            RenderVolume();
-        }
-
-        private void Bake()
-        {
-            _skinnedMeshHandler?.BakeMesh();
-
-            if (_computeAsync)
+            switch (_bakeType)
             {
-                _sdfBaker?.BakeSDFAsync(_queueType);
-            }
-            else
-            {
-                _sdfBaker?.BakeSDF();
+                case 0:
+                    _skinnedMeshHandler?.BakeMesh();
+                    _sdfBaker?.BakeSDF();
+                    RenderVolume();
+                    break;
+                case 1:
+                    _skinnedMeshHandler?.BakeMesh();
+                    _sdfBaker?.BakeSDFAsync(_queueType);
+                    RenderVolume();
+                    break;
+                case 2:
+                    if (_processing) return;
+
+                    try
+                    {
+                        _processing = true;
+
+                        _skinnedMeshHandler?.BakeMesh();
+                        var success = await _sdfBaker?.BakeSDFAsync(_queueType, _cts.Token);
+
+                        _processing = false;
+
+                        if (!success) return;
+                        RenderVolume();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
+                    finally
+                    {
+                        _processing = false;
+                    }
+                    break;
             }
         }
 
@@ -75,23 +100,20 @@ namespace MorphSDF.Sample
 
         private void OnGUI()
         {
-            var rect = new Rect(_fontSize / 2f, _fontSize / 2f, Screen.width / 2f, _fontSize * 1.5f);
-            var boxSize = 10;
-            
-            GUIStyle style = new GUIStyle(GUI.skin.toggle)
+            GUIStyle labelStyle = new GUIStyle(GUI.skin.label)
             {
                 fontSize = _fontSize,
-                alignment = TextAnchor.MiddleLeft
             };
 
-            style.padding = new RectOffset(
-                _fontSize + boxSize,
-                style.padding.right,
-                style.padding.top,
-                style.padding.bottom
-            );
+            GUIStyle fieldStyle = new GUIStyle(GUI.skin.textField)
+            {
+                fontSize = _fontSize,
+            };
 
-            _computeAsync = GUI.Toggle(rect, _computeAsync, "Compute Async", style);
+            GUILayout.BeginArea(new Rect(20, 20, Screen.width / 2, 100), GUI.skin.box);
+            GUILayout.Label("0: BakeSDF, 1: BakeSDFAsync: 2: Awaitable BakeSDFAsync", labelStyle);
+            Int32.TryParse(GUILayout.TextField(_bakeType.ToString(), fieldStyle), out _bakeType);
+            GUILayout.EndArea();
         }
     }
 }
