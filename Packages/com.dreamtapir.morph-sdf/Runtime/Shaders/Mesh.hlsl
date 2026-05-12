@@ -1,6 +1,8 @@
 #ifndef MORPH_SDF_HLSL_INCLUDE_MESH
 #define MORPH_SDF_HLSL_INCLUDE_MESH
 
+#include "Packages/com.dreamtapir.morph-sdf/Runtime/Shaders/RawBuffer.hlsl"
+
 ByteAddressBuffer _VertexBuffer;
 ByteAddressBuffer _IndexBuffer;
 
@@ -12,44 +14,29 @@ int _PositionByteOffset;
 int _NormalByteOffset;
 int _TangentByteOffset;
 
-inline float2 LoadFloat2(uint index, ByteAddressBuffer buffer, int stride, int offset)
-{
-    return asfloat(buffer.Load2(index * stride + offset));
-}
-
-inline float3 LoadFloat3(uint index, ByteAddressBuffer buffer, int stride, int offset)
-{
-    return asfloat(buffer.Load3(index * stride + offset));
-}
-
-inline float4 LoadFloat4(uint index, ByteAddressBuffer buffer, int stride, int offset)
-{
-    return asfloat(buffer.Load4(index * stride + offset));
-}
-
 inline float4 GetVertexColor(uint index)
 {
-    return LoadFloat4(index, _VertexBuffer, _Stride, _ColorByteOffset);
+    return LoadFloat4(_VertexBuffer, index, (uint)_Stride, (uint)_ColorByteOffset);
 }
 
 inline float2 GetVertexUV(uint index)
 {
-    return LoadFloat2(index, _VertexBuffer, _Stride, _UvByteOffset);
+    return LoadFloat2(_VertexBuffer, index, (uint)_Stride, (uint)_UvByteOffset);
 }
 
 inline float3 GetVertexPosition(uint index)
 {
-    return LoadFloat3(index, _VertexBuffer, _Stride, _PositionByteOffset);
+    return LoadFloat3(_VertexBuffer, index, (uint)_Stride, (uint)_PositionByteOffset);
 }
 
 inline float3 GetVertexNormal(uint index)
 {
-    return LoadFloat3(index, _VertexBuffer, _Stride, _NormalByteOffset);
+    return LoadFloat3(_VertexBuffer, index, (uint)_Stride, (uint)_NormalByteOffset);
 }
 
 inline float4 GetVertexTangent(uint index)
 {
-    return LoadFloat4(index, _VertexBuffer, _Stride, _TangentByteOffset);
+    return LoadFloat4(_VertexBuffer, index, (uint)_Stride, (uint)_TangentByteOffset);
 }
 
 uint3 GetIndices(uint start_index)

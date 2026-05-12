@@ -83,6 +83,7 @@ namespace MorphSDF
             _origin = bounds.center - bounds.extents;
             _cellSize = 1f / voxelPerMeter;
             var length = resolution.x * resolution.y * resolution.z;
+            var stride = sizeof(uint);
             
             RegisterKernel(Label.Initialize);
             RegisterKernel(Label.MarkSurfaceVoxels);
@@ -93,9 +94,9 @@ namespace MorphSDF
             RegisterKernel(Label.ColorAxis);
             RegisterKernel(Label.SignedDistance);
             
-            _voxel = new GraphicsBuffer(GraphicsBuffer.Target.Structured, length, sizeof(uint)){ name = $"{nameof(MeshToSDF)}_Voxel"};
+            _voxel = new GraphicsBuffer(GraphicsBuffer.Target.Raw, length, stride);
             _pba = new SwapBuffer<GraphicsBuffer>(
-                () => new GraphicsBuffer(GraphicsBuffer.Target.Structured, length, sizeof(int)),
+                () => new GraphicsBuffer(GraphicsBuffer.Target.Raw, length, stride),
                 buffer => buffer?.Release()
             );
             var textureFormat = format == TextureFormat.RFloat ? RenderTextureFormat.RFloat : RenderTextureFormat.RHalf;
@@ -260,13 +261,18 @@ namespace MorphSDF
 
             if (SystemInfo.supportsAsyncCompute && SystemInfo.supportsGraphicsFence)
             {
-                BakeSDFAsync(queueType);
+                _cmb.Clear();
+                _cmb.SetExecutionFlags(CommandBufferExecutionFlags.AsyncCompute);
+                
+                SetCommand(_cmb);
             
                 GraphicsFence fence = _cmb.CreateGraphicsFence
                 (
-                    GraphicsFenceType.AsyncQueueSynchronisation, 
+                    GraphicsFenceType.CPUSynchronisation, 
                     SynchronisationStageFlags.ComputeProcessing
                 );
+                
+                Graphics.ExecuteCommandBufferAsync(_cmb, queueType);
 
                 while (!fence.passed)
                 {

@@ -1,12 +1,12 @@
 #ifndef MORPH_SDF_HLSL_INCLUDE_SAT
 #define MORPH_SDF_HLSL_INCLUDE_SAT
 
-#include "Packages/com.dreamtapir.morph-sdf/Runtime/Shaders/Mesh.hlsl"
 #include "Packages/com.dreamtapir.morph-sdf/Runtime/Shaders/Common.hlsl"
+#include "Packages/com.dreamtapir.morph-sdf/Runtime/Shaders/Mesh.hlsl"
 
 inline int3 GetSdfCoordinates(float3 world_position)
 {
-    float3 sdf_position = (world_position - _Origin) / _CellSize;
+    const float3 sdf_position = (world_position - _Origin) / _CellSize;
     return (int3)sdf_position;
 }
 
@@ -52,16 +52,16 @@ bool TriangleBoxIntersect(float3 box_center, float3 box_extents, float3 v_0, flo
         [unroll]
         for (int j = 0; j < 3; ++j)
         {
-            float3 a = cross(axis[i], edges[j]);
-            float3 abs_a = abs(a);
+            const float3 a = cross(axis[i], edges[j]);
+            const float3 abs_a = abs(a);
             
-            float p_0 = dot(tv_0, a);
-            float p_1 = dot(tv_1, a);
-            float p_2 = dot(tv_2, a);
-            float min_p = min(p_0, min(p_1, p_2));
-            float max_p = max(p_0, max(p_1, p_2));
+            const float p_0 = dot(tv_0, a);
+            const float p_1 = dot(tv_1, a);
+            const float p_2 = dot(tv_2, a);
+            const float min_p = min(p_0, min(p_1, p_2));
+            const float max_p = max(p_0, max(p_1, p_2));
             
-            float box_r = box_extents.x * abs_a.x + box_extents.y * abs_a.y + box_extents.z * abs_a.z;
+            const float box_r = box_extents.x * abs_a.x + box_extents.y * abs_a.y + box_extents.z * abs_a.z;
             
             if (min_p > box_r || max_p < -box_r) return false;
         }
@@ -104,8 +104,8 @@ void MarkSurfaceVoxels(uint group_index : SV_GroupIndex, uint3 group_id : SV_Gro
 
                 if (TriangleBoxIntersect(cell_position, box_extents, tri_0, tri_1, tri_2))
                 {
-                    int grid_cell_index = IDToIndex(grid_cell_coord, _Resolution);
-                    InterlockedMin(_Voxel[grid_cell_index], zero_as_uint);
+                    const uint grid_cell_index = IDToIndex(grid_cell_coord, _Resolution);
+                    _Voxel.InterlockedMin(grid_cell_index * 4u, zero_as_uint);
                 }
             }
         }

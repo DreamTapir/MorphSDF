@@ -9,6 +9,7 @@ Github: https://github.com/PRIArobotics/Parallel-Banding-Algorithm-plus-py/tree/
 */
 
 #include "Packages/com.dreamtapir.morph-sdf/Runtime/Shaders/Common.hlsl"
+#include "Packages/com.dreamtapir.morph-sdf/Runtime/Shaders/RawBuffer.hlsl"
 
 // Sites 	 : ENCODE(x, y, z, 0, 0)
 // Not sites : ENCODE(0, 0, 0, 1, 0) or MARKER
@@ -75,14 +76,14 @@ void FloodZ(uint3 dispatch_thread_id : SV_DispatchThreadID)
     // Sweep down
     for (int i = 0; i < _Resolution.z; i++, index += plane)
     {
-        pixel_2 = _Input[index];
+        pixel_2 = LoadInt(_Input, index);
 
         if (!NotSite(pixel_2))
         {
             pixel_1 = pixel_2;
         }
 
-        _Output[index] = pixel_1;
+    	Store(_Output, pixel_1, index);
     }
 
 	int dist_1 = 0, dist_2 = 0, n_z = 0;
@@ -95,7 +96,7 @@ void FloodZ(uint3 dispatch_thread_id : SV_DispatchThreadID)
         n_z = GetZ(pixel_1);
         dist_1 = abs(n_z - (id.z + j));
 
-        pixel_2 = _Output[index];
+        pixel_2 = LoadInt(_Output, index);
         n_z = GetZ(pixel_2);
         dist_2 = abs(n_z - (id.z + j));
 
@@ -104,7 +105,7 @@ void FloodZ(uint3 dispatch_thread_id : SV_DispatchThreadID)
             pixel_1 = pixel_2;
         }
 
-        _Output[index] = pixel_1;
+    	Store(_Output, pixel_1, index);
     }
 }
 
@@ -122,7 +123,7 @@ void MaurerAxis(uint3 dispatch_thread_id : SV_DispatchThreadID)
     for (t.y = 0; t.y < _Resolution.y; ++t.y)
     {
     	int index = IDToIndex(t, _Resolution);
-        p = _Input[index];
+        p = LoadInt(_Input, index);
 
         if (NotSite(p)) continue;
 
@@ -143,7 +144,7 @@ void MaurerAxis(uint3 dispatch_thread_id : SV_DispatchThreadID)
 
     		if (HasNext(s_2))
     		{
-    			s_1 = _Output[IDToIndex(t.x, y_2, t.z, _Resolution)];
+    			s_1 = LoadInt(_Output, IDToIndex(t.x, y_2, t.z, _Resolution));
     		}
     	}
 
@@ -153,14 +154,14 @@ void MaurerAxis(uint3 dispatch_thread_id : SV_DispatchThreadID)
         y_2 = y_last;
         y_last = t.y;
 
-        _Output[index] = s_2;
+    	Store(_Output, s_2, index);
 
         flag = 1;
     }
 
     if (NotSite(p))
     {
-        _Output[IDToIndex(t.x, t.y - 1, t.z, _Resolution)] = Encode(0, y_last, 0, 1, flag); 
+    	Store(_Output, Encode(0, y_last, 0, 1, flag), IDToIndex(t.x, t.y - 1, t.z, _Resolution));
     }
 }
 
@@ -178,7 +179,7 @@ void ColorAxis(uint3 group_thread_id : SV_GroupThreadID, uint3 group_id : SV_Gro
 
 	if (is_valid)
 	{
-		last_2 = _Input[IDToIndex(t_x, y_last, t_z, _Resolution)]; 
+		last_2 = LoadInt(_Input, IDToIndex(t_x, y_last, t_z, _Resolution)); 
 		Decode(last_2, x_2, y_2, z_2);
 
 		if (NotSite(last_2))
@@ -186,14 +187,14 @@ void ColorAxis(uint3 group_thread_id : SV_GroupThreadID, uint3 group_id : SV_Gro
 			y_last = y_2;
 			if(HasNext(last_2))
 			{
-				last_2 = _Input[IDToIndex(t_x, y_last, t_z, _Resolution)];
+				last_2 = LoadInt(_Input, IDToIndex(t_x, y_last, t_z, _Resolution)); 
 				Decode(last_2, x_2, y_2, z_2);
 			}
 		}
 
 		if (HasNext(last_2))
 		{
-			last_1 = _Input[IDToIndex(t_x, y_2, t_z, _Resolution)];
+			last_1 = LoadInt(_Input, IDToIndex(t_x, y_2, t_z, _Resolution)); 
 			Decode(last_1, x_1, y_1, z_1);
 		}
 	}
@@ -229,7 +230,7 @@ void ColorAxis(uint3 group_thread_id : SV_GroupThreadID, uint3 group_id : SV_Gro
 
 					if (HasNext(last_2))
 					{
-						last_1 = _Input[IDToIndex(t_x, y_2, t_z, _Resolution)];
+						last_1 = LoadInt(_Input, IDToIndex(t_x, y_2, t_z, _Resolution));
 						Decode(last_1, x_1, y_1, z_1); 
 					}
 				}
@@ -251,7 +252,7 @@ void ColorAxis(uint3 group_thread_id : SV_GroupThreadID, uint3 group_id : SV_Gro
 	    	{
 	    		if (out_y + i < _Resolution.x && out_x >= 0 && out_x < _Resolution.y)
 	    		{
-	    			_Output[index] = transpose_block[i][group_thread_id.x];
+	    			Store(_Output, transpose_block[i][group_thread_id.x], index);
 	    		}
 	    	}
 	    }
@@ -266,10 +267,10 @@ void SignedDistance(uint3 dispatch_thread_id : SV_DispatchThreadID)
 	if (any(dispatch_thread_id >= (uint3)_Resolution)) return;
 	
 	const int index = IDToIndex(dispatch_thread_id, _Resolution);
-	const uint raw = _Voxel[index];
-	float s = sign(asfloat(IFloatFlip3(raw)));
+	const uint raw = LoadUInt(_Voxel, index);
+	float s = sign(IFloatFlip3AsFloat(raw));
 
-	_Sdf[dispatch_thread_id] = s * (float)distance(GetPosition(_Input[index]), (int3)dispatch_thread_id) * _CellSize;
+	_Sdf[dispatch_thread_id] = s * (float)distance(GetPosition(LoadInt(_Input, index)), (int3)dispatch_thread_id) * _CellSize;
 }
 
 #endif

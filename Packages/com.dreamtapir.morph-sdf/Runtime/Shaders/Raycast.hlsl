@@ -2,6 +2,7 @@
 #define MORPH_SDF_HLSL_INCLUDE_RAYCAST
 
 #include "Packages/com.dreamtapir.morph-sdf/Runtime/Shaders/Common.hlsl"
+#include "Packages/com.dreamtapir.morph-sdf/Runtime/Shaders/RawBuffer.hlsl"
 
 /*
  * brief Approximate volume
@@ -22,8 +23,8 @@ void BidirectionalRaycast(uint3 dispatch_thread_id : SV_DispatchThreadID)
     // Sweep down
     for (int i = 0; i < _Resolution.z; i++)
     {
-        uint raw = _Voxel[index];
-        float val = asfloat(IFloatFlip3(raw));
+        const uint raw = LoadUInt(_Voxel, index);
+        const float val = IFloatFlip3AsFloat(raw);
 
         if (abs(val) < 1e-5f) 
         {
@@ -38,7 +39,7 @@ void BidirectionalRaycast(uint3 dispatch_thread_id : SV_DispatchThreadID)
             was_surface = false;
 
             float sign = is_inside ? -1.0f : 1.0f;
-            _Voxel[index] = FloatFlip3(sign);
+            Store(_Voxel, FloatFlip3(sign), index);
         }
 
         index += plane;
@@ -52,8 +53,8 @@ void BidirectionalRaycast(uint3 dispatch_thread_id : SV_DispatchThreadID)
     {
         index -= plane;
         
-        uint raw = _Voxel[index];
-        float val = asfloat(IFloatFlip3(raw));
+        const uint raw = LoadUInt(_Voxel, index);
+        const float val = IFloatFlip3AsFloat(raw);
     
         if (abs(val) < 1e-5f) 
         {
@@ -67,11 +68,10 @@ void BidirectionalRaycast(uint3 dispatch_thread_id : SV_DispatchThreadID)
         {
             was_surface = false;
 
-            bool fwd_is_inside = val < 0.0f;
-            bool final_inside = fwd_is_inside && is_inside;
-    
-            float sign = final_inside ? -1.0f : 1.0f;
-            _Voxel[index] = FloatFlip3(sign);
+            const bool fwd_is_inside = val < 0.0f;
+            const bool final_inside = fwd_is_inside && is_inside;
+            const float sign = final_inside ? -1.0f : 1.0f;
+            Store(_Voxel, FloatFlip3(sign), index);
         }
     }
 }

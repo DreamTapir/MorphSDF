@@ -6,15 +6,15 @@ float3 _Origin;
 float _CellSize;
 int3 _Resolution;
 
-RWStructuredBuffer<uint> _Voxel;
+RWByteAddressBuffer _Voxel;
 
 /*
  * | 0          | 0               | 00 0000 0000 | 0000 0000 00 | 00 0000 0000 |
  * | not a site | no next element | x coordinate | y coordinate | z coordinate |
  * | 1-bits     | 1-bits          | 10-bits      | 10-bits      | 10-bits      |
  */
-StructuredBuffer<int> _Input;
-RWStructuredBuffer<int> _Output;
+ByteAddressBuffer _Input;
+RWByteAddressBuffer _Output;
 
 RWTexture3D<float> _Sdf;
 
@@ -54,6 +54,11 @@ inline uint FloatFlip3(float fl)
 inline uint IFloatFlip3(uint f2)
 {
     return (f2 >> 1) | (f2 << 31);
+}
+
+inline float IFloatFlip3AsFloat(uint f2)
+{
+    return asfloat(IFloatFlip3(f2));
 }
 
 #endif

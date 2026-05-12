@@ -18,7 +18,7 @@ void Initialize(uint3 dispatch_thread_id : SV_DispatchThreadID)
 
     const int index = IDToIndex(dispatch_thread_id, _Resolution);
     
-    _Voxel[index] = FloatFlip3(MAX_FLT);
+    Store(_Voxel, FloatFlip3(MAX_FLT), index);
 }
 
 [numthreads(8, 8, 8)]
@@ -27,8 +27,9 @@ void Volume(uint3 dispatch_thread_id : SV_DispatchThreadID)
     if (any(dispatch_thread_id >= (uint3)_Resolution)) return;
 
     const int index = IDToIndex(dispatch_thread_id, _Resolution);
-    const uint raw = _Voxel[index];
+    const uint raw = LoadUInt(_Voxel, index);
     const float val = asfloat(IFloatFlip3(raw));
     
-    _Output[index] = abs(val) < 1e-5f ? Encode(dispatch_thread_id, 0, 0) : MARKER;
+    const int result = abs(val) < 1e-5f ? Encode(dispatch_thread_id, 0, 0) : MARKER;
+    Store(_Output, result, index);
 }
